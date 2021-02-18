@@ -5,6 +5,8 @@ from fbprophet import Prophet
 
 # Loading data from GitHub and selecting Indonesia
 df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+
+# Selecting Indonesia
 data = df.loc[df['Country/Region']== 'Indonesia']
 del data['Province/State']
 
