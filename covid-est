@@ -1,0 +1,41 @@
+# Importing required libraries
+import pandas as pd
+import numpy as np
+from fbprophet import Prophet
+
+# Loading data from GitHub and selecting Indonesia
+df = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv')
+data = df.loc[df['Country/Region']== 'Indonesia']
+del data['Province/State']
+
+# Data Preparation
+data1 = data.transpose()
+data2 = data1.reset_index()
+data2.rename(columns={data2.columns[0]: "ds", data2.columns[1]: "y"}, inplace=True)
+data3 = data2.drop([0, 1, 2]).reset_index(drop=True)
+data3[['y']] = data3[['y']].astype(int)
+data3["ds"]= pd.to_datetime(data3["ds"])
+
+# Selecting rows based on positive cumulative value
+drop_rows = data3[data3['y']<=10000].index
+data3.drop(drop_rows, inplace = True)
+data4 = data3.reset_index(drop=True)
+
+# Forecasting Step
+m = Prophet(yearly_seasonality=True, daily_seasonality=False)
+m.fit(data4)
+future = m.make_future_dataframe(periods=30)
+forecast = m.predict(future)
+forecast[['yhat_lower', 'yhat', 'yhat_upper']] = forecast[['yhat_lower', 'yhat', 'yhat_upper']].astype(int)
+
+# GoF Calculation 
+GoF = data4
+GoF['yhat'] = forecast['yhat']
+GoF['APE'] = (((GoF.y - GoF.yhat).abs())/GoF.y)*100
+MAPE = GoF['APE'].mean()
+print('MAPE = ' + "{:.2f}%".format(MAPE))
+
+# Printing the results
+fig1 = m.plot(forecast)
+fig2 = m.plot_components(forecast)
+print(forecast[['ds', 'yhat_lower', 'yhat', 'yhat_upper']].tail(30))
